@@ -651,6 +651,9 @@ public class BookingServiceImpl implements BookingService {
         if (booking.getCheckOutDate().isBefore(booking.getCheckInDate())) {
             throw new IllegalArgumentException("Check-out cannot be before check-in");
         }
+        if (booking.getCheckInDate().isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException("Check-in date cannot be in the past");
+        }
         if (!availabilityService.isNumberOfGuestsValid(booking)) {
             throw new IllegalArgumentException("Guests exceed capacity");
         }
