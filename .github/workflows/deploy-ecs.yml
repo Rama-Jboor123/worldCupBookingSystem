@@ -20,9 +20,9 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      # 3. Run tests
-      - name: Run unit tests
-        run: mvn test -DskipTests=false
+      # 3. Build JAR
+      - name: Build JAR
+        run: mvn package -DskipTests=false
         working-directory: worldcup-hotel-booking
 
       # 4. Configure AWS credentials
@@ -46,12 +46,11 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t $ECR_REGISTRY/${{ secrets.ECR_REPOSITORY }}:$IMAGE_TAG .
+          docker build -t $ECR_REGISTRY/${{ secrets.ECR_REPOSITORY }}:$IMAGE_TAG worldcup-hotel-booking/
           docker tag $ECR_REGISTRY/${{ secrets.ECR_REPOSITORY }}:$IMAGE_TAG $ECR_REGISTRY/${{ secrets.ECR_REPOSITORY }}:latest
           docker push $ECR_REGISTRY/${{ secrets.ECR_REPOSITORY }}:$IMAGE_TAG
           docker push $ECR_REGISTRY/${{ secrets.ECR_REPOSITORY }}:latest
           echo "image=$ECR_REGISTRY/${{ secrets.ECR_REPOSITORY }}:$IMAGE_TAG" >> $GITHUB_OUTPUT
-        
 
       # 7. Download current task definition
       - name: Download task definition
@@ -81,6 +80,11 @@ jobs:
       # 10. Smoke test
       - name: Smoke test — health check
         run: |
-          curl --fail --retry 5 --retry-delay 15 \
-            ${{ secrets.ALB_URL }}/actuator/health \
-            ${{ secrets.ALB_URL }}/actuator/health | grep -E "200|401"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${{ secrets.ALB_URL }}/actuator/health)
+          echo "Health check status: $STATUS"
+          if [ "$STATUS" = "200" ] || [ "$STATUS" = "401" ]; then
+            echo "App is running!"
+          else
+            echo "Unexpected status: $STATUS"
+            exit 1
+          fi
