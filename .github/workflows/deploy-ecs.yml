@@ -46,7 +46,13 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t $ECR_REGISTRY/${{ secrets.ECR_REPOSITORY }}:$IMAGE_TAG worldcup-hotel-booking/
+          echo "=== Root directory contents ==="
+          ls -la
+          echo "=== Looking for Dockerfile ==="
+          find . -name "Dockerfile" 2>/dev/null
+          DOCKERFILE_DIR=$(dirname $(find . -name "Dockerfile" | head -1))
+          echo "=== Building from $DOCKERFILE_DIR ==="
+          docker build -t $ECR_REGISTRY/${{ secrets.ECR_REPOSITORY }}:$IMAGE_TAG $DOCKERFILE_DIR
           docker tag $ECR_REGISTRY/${{ secrets.ECR_REPOSITORY }}:$IMAGE_TAG $ECR_REGISTRY/${{ secrets.ECR_REPOSITORY }}:latest
           docker push $ECR_REGISTRY/${{ secrets.ECR_REPOSITORY }}:$IMAGE_TAG
           docker push $ECR_REGISTRY/${{ secrets.ECR_REPOSITORY }}:latest
