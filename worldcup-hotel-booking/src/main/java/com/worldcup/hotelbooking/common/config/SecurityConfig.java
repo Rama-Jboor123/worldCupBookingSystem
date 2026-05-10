@@ -102,6 +102,7 @@ public class SecurityConfig {
                         .requestMatchers("/availability/**").permitAll()
                         .requestMatchers("/users").permitAll()
                         .requestMatchers("/").permitAll()
+                        .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/login", "/login.html").permitAll()
                         .requestMatchers("/oauth2/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
