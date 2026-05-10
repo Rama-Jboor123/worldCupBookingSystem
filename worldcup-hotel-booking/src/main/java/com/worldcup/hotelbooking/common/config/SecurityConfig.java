@@ -101,6 +101,7 @@ public class SecurityConfig {
                         .requestMatchers("/catalog/**").permitAll()
                         .requestMatchers("/availability/**").permitAll()
                         .requestMatchers("/users").permitAll()
+                        .requestMatchers("/").permitAll()
                         .requestMatchers("/login", "/login.html").permitAll()
                         .requestMatchers("/oauth2/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
