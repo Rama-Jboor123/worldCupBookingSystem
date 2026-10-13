@@ -25,10 +25,14 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 public class BookingSteps {
 
     private BookingServiceImpl bookingService;
+    private BookingRepository bookingRepository;
 
     private Booking booking;
     private Booking booking2;
@@ -44,7 +48,7 @@ public class BookingSteps {
     public void aRoomIsAvailableForTheRequestedDates() {
 
         // Mock the dependencies of BookingServiceImpl
-        BookingRepository bookingRepository = mock(BookingRepository.class);
+        bookingRepository = mock(BookingRepository.class);
         pricingService = mock(EnhancedPricingServiceImpl.class);
         availabilityService = mock(AvailabilityServiceImpl.class);
         CancellationPolicyServiceImpl cancellationPolicyService =
@@ -187,6 +191,38 @@ public class BookingSteps {
            this.e = e;
        }
 
+    }
+
+    @Given("the guest selects check-in {string} and check-out {string}")
+    public void theGuestSelectsReversedDates(String checkIn, String checkOut) {
+        booking.setCheckInDate(LocalDate.parse(checkIn));
+        booking.setCheckOutDate(LocalDate.parse(checkOut));
+        booking2 = booking;
+    }
+
+    @Given("the guest requests {int} adults and {int} child for one room allowing {int} adults and {int} child")
+    public void theGuestExceedsRoomCapacity(int adults, int children, int maxAdults, int maxChildren) {
+        booking.setNumberOfAdults(adults);
+        booking.setNumberOfChildren(children);
+        booking.setNumberOfGuests(adults + children);
+        RoomType roomType = booking.getBookingRooms().getFirst().getRoomType();
+        roomType.setMaxAdults(maxAdults);
+        roomType.setMaxChildren(maxChildren);
+        // Exercise the production capacity calculation, rather than stubbing rejection.
+        doCallRealMethod().when(availabilityService).isNumberOfGuestsValid(any(Booking.class));
+        booking2 = booking;
+    }
+
+    @Then("the booking should be rejected with {string}")
+    public void theBookingShouldBeRejectedWith(String message) {
+        assertNotNull(e, "An invalid booking must throw an exception");
+        assertInstanceOf(IllegalArgumentException.class, e);
+        assertEquals(message, e.getMessage());
+    }
+
+    @Then("the booking should not be saved")
+    public void theBookingShouldNotBeSaved() {
+        verify(bookingRepository, never()).save(any(Booking.class));
     }
 
     @Then("an error message should be displayed")
