@@ -848,4 +848,8 @@ public class BookingServiceImpl implements BookingService {
         }
     }
 
+    public boolean isNumberOfGuestValid(Booking  booking) {
+        return booking.getNumberOfGuests() == booking.getNumberOfAdults()+ booking.getNumberOfChildren();
+    }
+
 }

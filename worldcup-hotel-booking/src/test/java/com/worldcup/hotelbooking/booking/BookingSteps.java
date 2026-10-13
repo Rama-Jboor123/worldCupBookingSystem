@@ -32,9 +32,11 @@ public class BookingSteps {
 
     private Booking booking;
     private Booking booking2;
+    private Booking booking3;
     private Booking result;
     Exception e;
-
+    private boolean guestCountValid;
+    private String expectedResult;
     private AvailabilityServiceImpl availabilityService;
     private EnhancedPricingServiceImpl pricingService;
 
@@ -193,5 +195,76 @@ public class BookingSteps {
       assertInstanceOf(IllegalArgumentException.class, e);
      assertEquals("Total number of guests must equal the sum of adults and children", e.getMessage());
     }
+
+
+    @Given("the guest enters {int} adults and {int} children")
+    public void theGuestEntersAdultsAndChildren(
+            int adults, int children) {
+        booking2 = new Booking();
+        booking2.setCheckInDate(LocalDate.now().plusDays(10));
+        booking2.setCheckOutDate(LocalDate.now().plusDays(12));
+        booking2.setNumberOfAdults(adults);
+        booking2.setNumberOfChildren(children);
+
+
+        // Test hotel
+        Hotel hotel = new Hotel();
+        hotel.setName("Test Hotel");
+        hotel.setCountry("Palestine");
+        hotel.setCity("Bethlehem");
+
+        // Test room type
+        RoomType roomType = new RoomType();
+        roomType.setId(1L);
+        roomType.setName("Standard Room");
+        roomType.setHotel(hotel);
+        roomType.setMaxAdults(2);
+        roomType.setMaxChildren(1);
+        roomType.setBasePrice(new BigDecimal("100.00"));
+        roomType.setTotalRooms(10);
+
+        BookingRoom bookingRoom = new BookingRoom();
+        bookingRoom.setBooking(booking2);
+        bookingRoom.setRoomType(roomType);
+
+
+        booking2.setHotel(hotel);
+        ArrayList<BookingRoom> bookingRooms = new ArrayList<>();
+        bookingRooms.add(bookingRoom);
+        booking2.setBookingRooms(bookingRooms);
+        BookingRepository bookingRepository = mock(BookingRepository.class);
+        pricingService = mock(EnhancedPricingServiceImpl.class);
+        availabilityService = mock(AvailabilityServiceImpl.class);
+        CancellationPolicyServiceImpl cancellationPolicyService =
+                mock(CancellationPolicyServiceImpl.class);
+        PaymentRepository paymentRepository = mock(PaymentRepository.class);
+        PaymentServiceImpl paymentService = mock(PaymentServiceImpl.class);
+
+        bookingService = new BookingServiceImpl(bookingRepository,pricingService,cancellationPolicyService,availabilityService,paymentRepository,paymentService);
+
+
+
+    }
+
+    @Given("the guest enters {int} as the total number of guests")
+    public void theGuestEntersTotalGuests(int total) {
+        booking2.setNumberOfGuests(total);
+    }
+
+    @When("the guest validates the booking guest count")
+    public void theGuestAttemptsToCreateABooking2() {
+
+       guestCountValid=bookingService.isNumberOfGuestValid(booking2);
+    }
+
+    @Then("the guest number validation should be {word}")
+    public void theGuestNumberValidationShouldBe(String result) {
+
+        expectedResult = guestCountValid ? "valid" : "invalid";
+
+        assertEquals(expectedResult, result);
+    }
+
+
 
 }
