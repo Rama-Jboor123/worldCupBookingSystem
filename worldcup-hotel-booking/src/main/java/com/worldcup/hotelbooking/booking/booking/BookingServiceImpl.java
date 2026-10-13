@@ -168,11 +168,12 @@ public class BookingServiceImpl implements BookingService {
         if (booking.getBookingRooms() == null || booking.getBookingRooms().isEmpty()) {
             throw new IllegalArgumentException("At least one room must be booked");
         }
-        if (!availabilityService.isNumberOfGuestsValid(booking)) {
-            throw new IllegalArgumentException("Number of guests exceeds room capacity");
-        }
+
         if (booking.getNumberOfGuests() != booking.getNumberOfAdults() + booking.getNumberOfChildren()) {
             throw new IllegalArgumentException("Total number of guests must equal the sum of adults and children");
+        }
+        if (!availabilityService.isNumberOfGuestsValid(booking)) {
+            throw new IllegalArgumentException("Number of guests exceeds room capacity");
         }
         for (BookingRoom room : booking.getBookingRooms()) {
             if (!availabilityService.checkAvailability(
