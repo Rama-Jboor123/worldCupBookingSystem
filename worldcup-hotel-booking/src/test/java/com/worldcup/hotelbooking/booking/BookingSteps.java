@@ -17,9 +17,9 @@ import io.cucumber.java.en.When;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -31,7 +31,9 @@ public class BookingSteps {
     private BookingServiceImpl bookingService;
 
     private Booking booking;
+    private Booking booking2;
     private Booking result;
+    Exception e;
 
     private AvailabilityServiceImpl availabilityService;
     private EnhancedPricingServiceImpl pricingService;
@@ -126,4 +128,70 @@ public class BookingSteps {
         assertNotNull(result);
         assertEquals(Booking.BookingStatus.PENDING, result.getStatus());
     }
+
+    @Given("The Guest enters a guest count that does not match the sum of adults and children")
+    public void theGuestEntersAGuestCountThatDoesNotMatchTheSumOfChildren(){
+
+         booking2 = new Booking();
+        booking2.setCheckInDate(LocalDate.now().plusDays(10));
+        booking2.setCheckOutDate(LocalDate.now().plusDays(12));
+        booking2.setNumberOfAdults(2);
+        booking2.setNumberOfChildren(0);
+        booking2.setNumberOfGuests(1);
+
+        // Test hotel
+        Hotel hotel = new Hotel();
+        hotel.setName("Test Hotel");
+        hotel.setCountry("Palestine");
+        hotel.setCity("Bethlehem");
+
+        // Test room type
+        RoomType roomType = new RoomType();
+        roomType.setId(1L);
+        roomType.setName("Standard Room");
+        roomType.setHotel(hotel);
+        roomType.setMaxAdults(2);
+        roomType.setMaxChildren(1);
+        roomType.setBasePrice(new BigDecimal("100.00"));
+        roomType.setTotalRooms(10);
+
+        BookingRoom bookingRoom = new BookingRoom();
+        bookingRoom.setBooking(booking2);
+        bookingRoom.setRoomType(roomType);
+
+
+        booking2.setHotel(hotel);
+        ArrayList<BookingRoom> bookingRooms = new ArrayList<>();
+        bookingRooms.add(bookingRoom);
+        booking2.setBookingRooms(bookingRooms);
+
+        BookingRepository bookingRepository = mock(BookingRepository.class);
+        pricingService = mock(EnhancedPricingServiceImpl.class);
+        availabilityService = mock(AvailabilityServiceImpl.class);
+        CancellationPolicyServiceImpl cancellationPolicyService =
+                mock(CancellationPolicyServiceImpl.class);
+        PaymentRepository paymentRepository = mock(PaymentRepository.class);
+        PaymentServiceImpl paymentService = mock(PaymentServiceImpl.class);
+
+        bookingService = new BookingServiceImpl(bookingRepository,pricingService,cancellationPolicyService,availabilityService,paymentRepository,paymentService);
+
+    }
+
+    @When("the guest attempts to create a booking")
+    public void theGuestAttemptsToCreateABooking() {
+       try{
+           bookingService.createBooking(booking2);
+       }catch(Exception e){
+           this.e = e;
+       }
+
+    }
+
+    @Then("an error message should be displayed")
+    public void theBookingShouldNotBeCreatedAndAnErrorMessageIsDisplayed() {
+        assertNotNull(e);
+      assertInstanceOf(IllegalArgumentException.class, e);
+     assertEquals("Total number of guests must equal the sum of adults and children", e.getMessage());
+    }
+
 }
