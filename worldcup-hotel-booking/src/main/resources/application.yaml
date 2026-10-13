@@ -95,3 +95,11 @@ security:
     issuer: worldcup-hotel-booking
     access-token-minutes: 60
     refresh-token-days: 7
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:5432/worldcup_hotel_booking_no_spelling_mistakes
